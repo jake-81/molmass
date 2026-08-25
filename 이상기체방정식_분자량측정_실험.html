@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이상 기체 방정식을 활용하여 기체의 종류 확인하기 — 가상 실험</title>
+<style>
+  :root{
+    --cream:#FEFBEE;
+    --paper:#FFFFFF;
+    --navy:#1B2A4A;
+    --navy-2:#2E4570;
+    --navy-soft:#E8ECF3;
+    --orange:#E8792D;
+    --orange-soft:#FDE6D2;
+    --ink:#14141A;
+    --line:#E4DFC9;
+    --success:#2F7B4F;
+    --success-soft:#E3F1E8;
+    --danger:#C1443B;
+    --danger-soft:#FBE7E4;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1040px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* header */
+  .badge-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--ink);color:#fff;
+    font-size:13px;font-weight:700;letter-spacing:.02em;
+    padding:6px 14px;border-radius:999px;
+  }
+  .pill .num{color:var(--orange);}
+  .unit-tag{font-size:13px;color:var(--navy-2);font-weight:600;}
+  h1{font-size:26px;margin:0 0 4px;color:var(--navy);letter-spacing:-.01em;}
+  .subhead{font-size:14.5px;color:#5b5b52;margin:0 0 22px;}
+  .goal-box{
+    display:flex;gap:14px;background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:16px 18px;margin-bottom:24px;
+  }
+  .goal-box .icon{font-size:20px;line-height:1;}
+  .goal-box .label{font-size:12.5px;font-weight:800;color:var(--orange);letter-spacing:.03em;margin-bottom:3px;}
+  .goal-box p{margin:0;font-size:14.5px;color:var(--ink);}
+
+  /* stepper */
+  .stepper{display:flex;gap:6px;margin-bottom:22px;overflow-x:auto;padding-bottom:4px;}
+  .step-pill{
+    flex:1;min-width:118px;text-align:center;
+    border:1px solid var(--line);background:var(--paper);
+    border-radius:10px;padding:9px 6px;font-size:12.5px;font-weight:700;color:#9a9587;
+    white-space:nowrap;position:relative;
+  }
+  .step-pill .n{display:block;font-size:10.5px;font-weight:800;letter-spacing:.05em;margin-bottom:2px;}
+  .step-pill.active{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .step-pill.active .n{color:var(--orange);}
+  .step-pill.done{border-color:var(--success);color:var(--success);background:var(--success-soft);}
+  .step-pill.done .n{color:var(--success);}
+
+  /* stage */
+  .stage{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    padding:26px 28px;margin-bottom:20px;min-height:380px;
+  }
+  .stage h2{margin:0 0 6px;font-size:19px;color:var(--navy);}
+  .stage .hint{font-size:13.5px;color:#7a7666;margin:0 0 20px;}
+
+  .two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:flex-start;}
+  @media (max-width:760px){.two-col{grid-template-columns:1fr;}}
+
+  .scene{
+    background:var(--navy-soft);border-radius:14px;padding:18px;
+    display:flex;align-items:center;justify-content:center;min-height:260px;
+  }
+  .scene svg{max-width:100%;height:auto;}
+
+  .controls{display:flex;flex-direction:column;gap:14px;}
+  .readout{
+    background:var(--ink);color:#8fffc0;font-family:var(--mono);
+    border-radius:10px;padding:14px 16px;font-size:26px;font-weight:700;
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .readout .u{font-size:14px;color:#9adfba;font-weight:600;}
+  .readout.dim{color:#5a6a63;}
+
+  button{
+    font-family:inherit;font-size:14.5px;font-weight:700;
+    border-radius:10px;padding:12px 18px;cursor:pointer;border:none;
+    transition:transform .06s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(.98);}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:var(--orange);color:#fff;}
+  .btn-primary:hover:not(:disabled){background:#d76a1f;}
+  .btn-secondary{background:var(--navy);color:#fff;}
+  .btn-secondary:hover:not(:disabled){background:var(--navy-2);}
+  .btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--line);}
+  .btn-ghost:hover:not(:disabled){background:var(--navy-soft);}
+
+  .nav-row{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+
+  .note-box{
+    background:var(--orange-soft);border-radius:10px;padding:12px 14px;
+    font-size:13px;color:#7a4318;margin-top:10px;
+  }
+  .warn-box{background:var(--danger-soft);color:var(--danger);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:8px;display:none;}
+
+  /* data table */
+  .data-panel{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px 26px;margin-bottom:20px;
+  }
+  .data-panel h3{margin:0 0 14px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line);}
+  th{color:var(--navy-2);font-weight:700;font-size:12.5px;letter-spacing:.02em;background:var(--navy-soft);}
+  td{font-family:var(--mono);font-weight:600;color:var(--ink);}
+  td.empty{color:#c9c4b3;font-family:inherit;font-weight:500;}
+
+  /* calc inputs */
+  .calc-step{
+    border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;background:#FFFEFA;
+  }
+  .calc-step .q{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .calc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .calc-row input[type=number]{
+    width:120px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+    font-family:var(--mono);font-size:14.5px;
+  }
+  .calc-row .u{font-size:13.5px;color:#7a7666;}
+  .fb{font-size:13px;font-weight:700;margin-top:8px;display:none;}
+  .fb.ok{color:var(--success);display:block;}
+  .fb.bad{color:var(--danger);display:block;}
+  .formula{font-family:var(--mono);background:var(--navy-soft);border-radius:8px;padding:8px 12px;display:inline-block;font-size:13.5px;color:var(--navy);margin-bottom:8px;}
+
+  .vapor-table{margin-top:8px;font-size:12.5px;}
+  .vapor-table table{font-size:12px;}
+  .vapor-table th,.vapor-table td{padding:5px 4px;}
+  details{margin-top:6px;}
+  summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--navy-2);}
+
+  .result-hero{
+    text-align:center;padding:26px 10px 10px;
+  }
+  .result-hero .m-value{font-size:44px;font-weight:800;color:var(--navy);font-family:var(--mono);}
+  .gas-choices{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0;}
+  .gas-choice{
+    border:2px solid var(--line);background:#fff;border-radius:12px;padding:14px 20px;cursor:pointer;
+    font-weight:700;font-size:14.5px;min-width:150px;text-align:center;
+  }
+  .gas-choice .mm{display:block;font-size:12px;font-weight:600;color:#8a8577;margin-top:3px;}
+  .gas-choice:hover{border-color:var(--orange);}
+  .gas-choice.picked{border-color:var(--orange);background:var(--orange-soft);}
+  .gas-choice.correct{border-color:var(--success);background:var(--success-soft);}
+  .gas-choice.wrong{border-color:var(--danger);background:var(--danger-soft);}
+
+  .verdict{
+    border-radius:14px;padding:18px 20px;margin-top:16px;display:none;
+  }
+  .verdict.show{display:block;}
+  .verdict.ok{background:var(--success-soft);color:#1f5233;}
+  .verdict.bad{background:var(--danger-soft);color:#7d271f;}
+  .verdict h4{margin:0 0 6px;font-size:16px;}
+  .verdict p{margin:0;font-size:14px;}
+
+  .intro-card{text-align:center;padding:30px 10px;}
+  .intro-card h2{font-size:22px;}
+  .intro-card p{max-width:560px;margin:0 auto 20px;color:#5b5b52;font-size:14.5px;}
+  .gas-table{margin:0 auto 24px;max-width:460px;}
+
+  footer.credit{text-align:center;font-size:12px;color:#a7a294;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="badge-row">
+    <span class="pill">탐구 활동 · 가상 실험</span>
+    <span class="unit-tag">Ⅰ단원 · 01. 기체의 성질</span>
+  </div>
+  <h1>이상 기체 방정식을 활용하여 기체의 종류 확인하기</h1>
+  <p class="subhead">동아출판 「물질과 에너지」 14~15쪽 탐구 활동 · 간접(가상) 실험</p>
+
+  <div class="goal-box">
+    <div class="icon">🎯</div>
+    <div>
+      <div class="label">목표</div>
+      <p>이상 기체 방정식을 활용하여 산소, 이산화 탄소, 뷰테인 중 통 안에 들어 있는 미지의 기체 종류를 확인하는 실험을 설계하고 수행할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div class="stage" id="stage"></div>
+
+  <div class="data-panel" id="dataPanelWrap" style="display:none;">
+    <h3>📋 자료 수집 결과</h3>
+    <table>
+      <thead>
+        <tr><th>온도 (℃)</th><th>압력 (기압)</th><th>기체의 부피 (mL)</th><th>기체의 질량 (g)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="dT" class="empty">—</td>
+          <td id="dP" class="empty">—</td>
+          <td id="dV" class="empty">—</td>
+          <td id="dM" class="empty">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="credit">가상 실험 시뮬레이션 · 실제 실험을 대체하는 간접 체험 자료입니다.</footer>
+</div>
+
+<script>
+/* ---------------- 데이터 ---------------- */
+const GASES = [
+  {key:'o2', name:'산소', formula:'O₂', M:32},
+  {key:'co2', name:'이산화 탄소', formula:'CO₂', M:44},
+  {key:'butane', name:'뷰테인', formula:'C₄H₁₀', M:58},
+];
+const VAPOR = {15:12.8,16:13.6,17:14.5,18:15.5,19:16.5,20:17.5,21:18.7,22:19.8,23:21.1,24:22.4,25:23.8,26:25.2,27:26.7,28:28.3,29:30.0,30:31.8};
+const R = 0.082;
+const STEP_LABELS = ['시작','① 초기 질량','② 기체 수집','③ 온도·압력','④ 최종 질량','⑤ 자료 분석','⑥ 기체 확인'];
+
+/* 수면 높이 맞추기 (기체 압력 = 대기압 확인) 관련 상수/함수
+   실린더를 길게(=CYL_H 증가) 하고, 외부 수면 높이(EXTERNAL_LEVEL_Y)를
+   "모을 수 있는 기체량(60~300mL)"에 대응하는 내부 경계 높이의 중간값에
+   맞춰 두어, 어떤 부피를 모으더라도 슬라이더 범위 안에서 항상 두 수면을
+   맞출 수 있도록 계산했다. */
+const CYL_TOP=70, CYL_BOTTOM=220, CYL_H=CYL_BOTTOM-CYL_TOP, MAX_FILL=300;
+const EXTERNAL_LEVEL_Y=160, LEVEL_TOL=5;
+const LEVEL_SLIDER_MIN=-65, LEVEL_SLIDER_MAX=65;
+
+function computeLevelDiff(){
+  const pct = Math.min(1, (S.volumeML||0)/MAX_FILL);
+  const gasHeight = CYL_H*pct;
+  const internalY = (CYL_TOP+gasHeight) - (S.levelOffset||0);
+  return internalY - EXTERNAL_LEVEL_Y; // >0: 실린더 안 수면이 더 낮음, <0: 더 높음
+}
+
+let S = null; // scenario/session state
+
+function newScenario(){
+  const gas = GASES[Math.floor(Math.random()*GASES.length)];
+  const T = 18 + Math.floor(Math.random()*10); // 18~27
+  const Patm = +(0.97 + Math.random()*0.06).toFixed(2);
+  const massBefore = +(150 + Math.random()*40).toFixed(2);
+  const rate = 32 + Math.random()*18; // mL/sec
+  S = {
+    step:0, gas, T, Patm, massBefore, rate,
+    volumeML:null, massAfter:null, massGas:null,
+    pGas:null, collecting:false, collectStart:null, collectVal:0,
+    calc:{vapor:false, pcorr:false, mol:false, molar:false},
+    nTrue:null, mCalcTrue:null,
+    picked:null,
+    levelOffset:0, leveled:false
+  };
+}
+
+function fmt(n,d=2){ return Number(n).toFixed(d); }
+
+/* ---------------- 렌더 ---------------- */
+function renderStepper(){
+  const el = document.getElementById('stepper');
+  el.innerHTML = STEP_LABELS.map((label,i)=>{
+    let cls='step-pill';
+    if(i===S.step) cls+=' active';
+    else if(i<S.step) cls+=' done';
+    return `<div class="${cls}"><span class="n">STEP ${i}</span>${label}</div>`;
+  }).join('');
+}
+
+function renderDataPanel(){
+  const wrap = document.getElementById('dataPanelWrap');
+  if(S.step>=2 || S.volumeML!=null || S.T){ /* show once something exists */ }
+  wrap.style.display = S.step>=1 ? 'block':'none';
+  const set = (id,val)=>{
+    const td = document.getElementById(id);
+    if(val===null||val===undefined){ td.textContent='—'; td.classList.add('empty'); }
+    else { td.textContent=val; td.classList.remove('empty'); }
+  };
+  set('dT', S.recordedT!=null ? S.recordedT : null);
+  set('dP', S.recordedP!=null ? S.recordedP : null);
+  set('dV', S.volumeML!=null ? S.volumeML : null);
+  set('dM', S.massGas!=null ? fmt(S.massGas) : null);
+}
+
+function goStep(n){
+  S.step = n;
+  renderStepper();
+  renderDataPanel();
+  renderStage();
+}
+
+function renderStage(){
+  const stage = document.getElementById('stage');
+  if(S.step===0) stage.innerHTML = introHTML();
+  else if(S.step===1) stage.innerHTML = step1HTML();
+  else if(S.step===2) stage.innerHTML = step2HTML();
+  else if(S.step===3) stage.innerHTML = step3HTML();
+  else if(S.step===4) stage.innerHTML = step4HTML();
+  else if(S.step===5) stage.innerHTML = step5HTML();
+  else if(S.step===6) stage.innerHTML = step6HTML();
+  attachHandlers();
+}
+
+/* ---------------- STEP 0: 인트로 ---------------- */
+function introHTML(){
+  return `
+  <div class="intro-card">
+    <h2>미지의 기체, 정체를 밝혀라 🔍</h2>
+    <p>산소(O₂), 이산화 탄소(CO₂), 뷰테인(C₄H₁₀) 중 하나가 들어 있는 통이 주어집니다.
+    수상 치환으로 기체를 모으고, 온도·압력·부피·질량을 측정한 뒤 이상 기체 방정식으로
+    분자량을 계산하여 기체의 정체를 확인해 보세요.</p>
+    <table class="gas-table">
+      <thead><tr><th>기체</th><th>산소(O₂)</th><th>이산화 탄소(CO₂)</th><th>뷰테인(C₄H₁₀)</th></tr></thead>
+      <tbody><tr><th>분자량</th><td>32</td><td>44</td><td>58</td></tr></tbody>
+    </table>
+    <button class="btn-primary" id="startBtn">🧪 새로운 기체로 실험 시작하기</button>
+  </div>`;
+}
+
+/* ---------------- STEP 1: 초기 질량 ---------------- */
+function step1HTML(){
+  const measured = S.massBefore!=null && S.step1Done;
+  return `
+  <h2>① 기체가 들어 있는 통의 질량 측정</h2>
+  <p class="hint">실험 과정 1 — 기체를 수집하기 전, 통 전체의 질량을 전자저울로 측정합니다.</p>
+  <div class="two-col">
+    <div class="scene">${svgBalance(S.step1Done ? S.massBefore : null, true)}</div>
+    <div class="controls">
+      <div class="readout ${S.step1Done?'':'dim'}"><span>${S.step1Done? fmt(S.massBefore):'0.00'}</span><span class="u">g</span></div>
+      <button class="btn-primary" id="measureBefore" ${S.step1Done?'disabled':''}>⚖️ 질량 측정하기</button>
+      <div class="note-box">전자저울의 영점을 확인한 뒤 측정합니다. 측정값은 자료 표에 자동으로 반영되지 않고, 다음 단계에서 최종 질량과 비교해 기체의 질량을 구합니다.</div>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-secondary" id="nextBtn" ${S.step1Done?'':'disabled'}>다음 단계 →</button>
+  </div>`;
+}
+
+/* ---------------- STEP 2: 기체 수집 (수상 치환) ---------------- */
+function step2HTML(){
+  const finished = S.volumeML!=null;
+  const revealVol = finished && S.leveled;
+  return `
+  <h2>② 수상 치환으로 기체 모으기</h2>
+  <p class="hint">고무관으로 통과 눈금실린더를 연결하고, 수조 속에서 기체를 모읍니다. 원하는 만큼 모았으면 [수집 멈추기]를 눌러 주세요.</p>
+  <div class="two-col">
+    <div class="scene">${svgWaterDisplacement(finished ? S.volumeML : S.collectVal, finished ? S.levelOffset : 0)}</div>
+    <div class="controls">
+      <div class="readout ${revealVol?'':'dim'}"><span id="volReadout">${revealVol ? S.volumeML : (finished ? '?' : fmt(S.collectVal,0))}</span><span class="u">mL</span></div>
+      <button class="btn-primary" id="collectBtn">${S.collecting? '⏹ 수집 멈추기' : '▶ 기체 수집 시작'}</button>
+      <div class="warn-box" id="lowVolWarn" style="${S.lowVolWarn?'display:block;':''}">모은 기체의 양이 너무 적어요. 조금 더 모아보세요 (최소 60 mL).</div>
+      ${finished ? levelPanelHTML() : `<div class="note-box">수상 치환으로 모은 기체에는 수증기가 함께 섞여 있습니다. 이 부분은 ⑤ 자료 분석 단계에서 압력을 보정할 때 고려합니다.</div>`}
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-secondary" id="nextBtn" ${(finished && S.leveled)?'':'disabled'}>다음 단계 →</button>
+  </div>`;
+}
+
+function levelPanelHTML(){
+  const diff = computeLevelDiff();
+  const matched = Math.abs(diff) <= LEVEL_TOL;
+  if(matched) S.leveled = true;
+  return `
+  <div class="note-box" id="levelStatus" style="${matched?'background:var(--success-soft);color:#1f5233;':''}">
+    ${matched
+      ? '✅ 안과 밖의 수면 높이가 같아졌습니다! 이제 실린더 속 기체의 압력이 대기압과 같아져 부피를 그대로 읽을 수 있습니다.'
+      : (diff>0
+          ? '⚠️ 실린더 안의 수면이 수조보다 낮습니다. 슬라이더를 <b>올리기</b> 쪽으로 이동해 두 수면을 맞춰 보세요.'
+          : '⚠️ 실린더 안의 수면이 수조보다 높습니다. 슬라이더를 <b>내리기</b> 쪽으로 이동해 두 수면을 맞춰 보세요.')}
+  </div>
+  <div style="margin-top:8px;">
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#7a7666;margin-bottom:4px;">
+      <span>⬇ 내리기</span><span style="font-weight:700;color:var(--navy);">눈금실린더 높이 조절</span><span>올리기 ⬆</span>
+    </div>
+    <input type="range" id="levelSlider" min="${LEVEL_SLIDER_MIN}" max="${LEVEL_SLIDER_MAX}" step="1" value="${S.levelOffset}" style="width:100%;">
+  </div>
+  <div class="note-box" style="margin-top:10px;">수상 치환으로 모은 기체에는 수증기가 함께 섞여 있습니다. 이 부분은 ⑤ 자료 분석 단계에서 압력을 보정할 때 고려합니다.</div>`;
+}
+
+/* ---------------- STEP 3: 온도·압력 측정 ---------------- */
+function step3HTML(){
+  const recorded = S.recordedT!=null;
+  return `
+  <h2>③ 온도와 압력(기압) 측정</h2>
+  <p class="hint">온도계와 기압계로 실험실의 온도와 대기압을 읽습니다.</p>
+  <div class="two-col">
+    <div class="scene">${svgThermoBaro(S.T, S.Patm)}</div>
+    <div class="controls">
+      <div class="readout ${recorded?'':'dim'}"><span>${recorded? S.T : '--'}</span><span class="u">℃</span></div>
+      <div class="readout ${recorded?'':'dim'}"><span>${recorded? fmt(S.Patm) : '-.--'}</span><span class="u">기압</span></div>
+      <button class="btn-primary" id="recordTP" ${recorded?'disabled':''}>📏 값 기록하기</button>
+      <div class="note-box">기압계를 이용하는 대신 스마트 기기의 기압 측정 앱을 활용할 수도 있습니다.</div>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-secondary" id="nextBtn" ${recorded?'':'disabled'}>다음 단계 →</button>
+  </div>`;
+}
+
+/* ---------------- STEP 4: 최종 질량 ---------------- */
+function step4HTML(){
+  const done = S.massAfter!=null;
+  return `
+  <h2>④ 기체를 내보낸 뒤 통의 질량 측정</h2>
+  <p class="hint">기체를 모은 만큼 빠져나간 통을 다시 저울에 올려 질량을 측정합니다.</p>
+  <div class="two-col">
+    <div class="scene">${svgBalance(done? S.massAfter : null, false)}</div>
+    <div class="controls">
+      <div class="readout ${done?'':'dim'}"><span>${done? fmt(S.massAfter):'0.00'}</span><span class="u">g</span></div>
+      <button class="btn-primary" id="measureAfter" ${done?'disabled':''}>⚖️ 질량 측정하기</button>
+      ${done? `<div class="note-box">처음 질량 ${fmt(S.massBefore)} g − 나중 질량 ${fmt(S.massAfter)} g = <b>기체의 질량 ${fmt(S.massGas)} g</b></div>` : ''}
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-secondary" id="nextBtn" ${done?'':'disabled'}>다음 단계 →</button>
+  </div>`;
+}
+
+/* ---------------- STEP 5: 자료 분석 (계산) ---------------- */
+function step5HTML(){
+  const vaporCorrect = VAPOR[S.T];
+  const pGasCorrect = +(S.Patm - vaporCorrect/760).toFixed(3);
+  S.pGas = pGasCorrect;
+  const Vl = S.volumeML/1000;
+  const Tk = S.T+273;
+  const nCorrect = +((pGasCorrect*Vl)/(R*Tk)).toFixed(4);
+  S.nTrue = nCorrect;
+  const molarCorrect = +(S.massGas/nCorrect).toFixed(1);
+  S.mCalcTrue = molarCorrect;
+
+  const vaporRows = Object.keys(VAPOR).map(t=>{
+    const hl = (+t===S.T) ? ' style="background:var(--orange-soft);font-weight:800;"' : '';
+    return `<td${hl}>${t}</td>`;
+  }).join('');
+  const vaporVals = Object.values(VAPOR).map((v,i)=>{
+    const t = Object.keys(VAPOR)[i];
+    const hl = (+t===S.T) ? ' style="background:var(--orange-soft);font-weight:800;"' : '';
+    return `<td${hl}>${v}</td>`;
+  }).join('');
+
+  return `
+  <h2>⑤ 자료 수집 및 분석</h2>
+  <p class="hint">이상 기체 방정식(PV = nRT)을 이용해 기체의 분자량을 구해 보자. 아래 참고표에서 측정 온도에 해당하는 포화 수증기압을 찾아 압력을 보정한다.</p>
+
+  <details class="vapor-table">
+    <summary>💧 온도별 물의 포화 수증기압 참고표 (mmHg)</summary>
+    <table style="margin-top:8px;">
+      <thead><tr><th>온도(℃)</th>${vaporRows}</tr></thead>
+      <tbody><tr><th>수증기압</th>${vaporVals}</tr></tbody>
+    </table>
+  </details>
+
+  <div class="calc-step">
+    <div class="q">1. 측정 온도(${S.T}℃)에서의 포화 수증기압은? <span style="color:#a7a294;font-weight:500;">(위 표에서 찾기)</span></div>
+    <div class="calc-row">
+      <input type="number" step="0.1" id="in-vapor" placeholder="0.0"><span class="u">mmHg</span>
+      <button class="btn-ghost" id="check-vapor">확인</button>
+    </div>
+    <div class="fb" id="fb-vapor"></div>
+  </div>
+
+  <div class="calc-step">
+    <div class="q">2. 대기압에서 수증기압을 빼서 기체(순수 기체)의 압력을 보정하세요.</div>
+    <div class="formula">P<sub>기체</sub> = P<sub>대기</sub> − P<sub>수증기</sub> (기압 단위로 환산: ÷760)</div>
+    <div class="calc-row">
+      대기압 <b>${fmt(S.Patm)}</b> 기압 − ( <span id="vaporEcho">?</span> mmHg ÷ 760 ) =
+      <input type="number" step="0.001" id="in-pcorr" placeholder="0.000"><span class="u">기압</span>
+      <button class="btn-ghost" id="check-pcorr">확인</button>
+    </div>
+    <div class="fb" id="fb-pcorr"></div>
+  </div>
+
+  <div class="calc-step">
+    <div class="q">3. 이상 기체 방정식으로 기체의 몰수(n)를 구하세요.</div>
+    <div class="formula">n = PV / RT　(R = 0.082 기압·L/(mol·K), V = ${fmt(Vl,3)} L, T = ${Tk} K)</div>
+    <div class="calc-row">
+      <input type="number" step="0.0001" id="in-mol" placeholder="0.0000"><span class="u">mol</span>
+      <button class="btn-ghost" id="check-mol">확인</button>
+    </div>
+    <div class="fb" id="fb-mol"></div>
+  </div>
+
+  <div class="calc-step">
+    <div class="q">4. 기체의 질량(${fmt(S.massGas)} g)과 몰수를 이용해 분자량(M)을 구하세요.</div>
+    <div class="formula">M = 질량 ÷ n</div>
+    <div class="calc-row">
+      <input type="number" step="0.1" id="in-molar" placeholder="0.0"><span class="u">g/mol</span>
+      <button class="btn-ghost" id="check-molar">확인</button>
+    </div>
+    <div class="fb" id="fb-molar"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-secondary" id="nextBtn" ${S.calc.molar? '' : 'disabled'}>기체 확인하러 가기 →</button>
+  </div>`;
+}
+
+/* ---------------- STEP 6: 결과 확인 ---------------- */
+function step6HTML(){
+  return `
+  <h2>⑥ 기체의 종류 확인</h2>
+  <div class="result-hero">
+    <p class="hint" style="margin-bottom:2px;">계산한 기체의 분자량</p>
+    <div class="m-value">${fmt(S.mCalcTrue,1)} <span style="font-size:20px;color:#8a8577;">g/mol</span></div>
+  </div>
+  <p class="hint" style="text-align:center;">가장 가까운 분자량의 기체를 선택해 정체를 확인해 보세요.</p>
+  <div class="gas-choices" id="gasChoices">
+    ${GASES.map(g=>`<div class="gas-choice" data-key="${g.key}"><span>${g.name} (${g.formula})</span><span class="mm">분자량 ${g.M}</span></div>`).join('')}
+  </div>
+  <div class="verdict" id="verdict"></div>
+  <div class="nav-row">
+    <button class="btn-ghost" id="backBtn">이전</button>
+    <button class="btn-primary" id="restartBtn">🔁 새로운 기체로 다시 실험하기</button>
+  </div>`;
+}
+
+/* ---------------- SVG 일러스트 ---------------- */
+function svgBalance(value, showCanister){
+  const showVal = value!=null;
+  return `
+  <svg viewBox="0 0 260 200" width="260">
+    <rect x="30" y="150" width="200" height="14" rx="4" fill="#1B2A4A"/>
+    <rect x="60" y="110" width="140" height="42" rx="8" fill="#fff" stroke="#1B2A4A" stroke-width="2"/>
+    <rect x="72" y="120" width="116" height="22" rx="4" fill="#14141A"/>
+    <text x="130" y="136" text-anchor="middle" font-family="monospace" font-size="14" fill="#8fffc0" font-weight="700">${showVal? value.toFixed(2)+' g' : '--.-- g'}</text>
+    ${showCanister!==null ? svgCanister(130,60,0.9) : ''}
+  </svg>`;
+}
+
+function svgCanister(cx,cy,scale){
+  return `<g transform="translate(${cx-24*scale},${cy-40*scale}) scale(${scale})">
+    <rect x="0" y="14" width="48" height="70" rx="8" fill="#2E4570" stroke="#1B2A4A" stroke-width="2"/>
+    <rect x="10" y="0" width="28" height="16" rx="4" fill="#E8792D"/>
+    <rect x="6" y="30" width="36" height="8" fill="#FEFBEE" opacity=".5"/>
+    <rect x="6" y="50" width="36" height="6" fill="#FEFBEE" opacity=".3"/>
+  </g>`;
+}
+
+function svgWaterDisplacement(fillLevel, offset){
+  offset = offset||0;
+  const pct = Math.min(1, fillLevel/MAX_FILL);
+  const cylTop=CYL_TOP, cylBottom=CYL_BOTTOM, cylH=CYL_H;
+  const gasHeight = cylH*pct;
+  const showLevelLines = S.volumeML!=null; // 수집이 끝난 뒤에만 수면 비교선 표시
+  const internalY = (cylTop+gasHeight) - offset;
+  const diff = internalY - EXTERNAL_LEVEL_Y;
+  const matched = Math.abs(diff) <= LEVEL_TOL;
+  const lineColor = matched ? '#2F7B4F' : '#C1443B';
+  return `
+  <svg viewBox="0 0 340 320" width="340">
+    <!-- canister -->
+    <g transform="translate(10,30)">${svgCanister(24,20,1)}</g>
+    <!-- tube -->
+    <path d="M 34 94 Q 110 130 190 155" stroke="#1B2A4A" stroke-width="4" fill="none"/>
+    <!-- water tub (길게: 실린더가 넉넉히 움직일 수 있는 공간 확보) -->
+    <rect x="120" y="140" width="200" height="160" rx="10" fill="#CFE3F2" stroke="#1B2A4A" stroke-width="2"/>
+    <rect x="120" y="${EXTERNAL_LEVEL_Y}" width="200" height="${300-EXTERNAL_LEVEL_Y}" fill="#8FC4E3" opacity="0.6"/>
+    <!-- inverted graduated cylinder (offset 만큼 위/아래로 이동, 길게 늘림) -->
+    <g transform="translate(0, ${-offset})">
+      <rect x="200" y="${cylTop}" width="40" height="${cylH}" fill="#eaf3fb" stroke="#1B2A4A" stroke-width="2"/>
+      <rect x="200" y="${cylTop}" width="40" height="${gasHeight}" fill="#FBD7B8"/>
+      <rect x="200" y="${cylTop+gasHeight}" width="40" height="${cylH-gasHeight}" fill="#8FC4E3" opacity="0.7"/>
+      ${[...Array(9)].map((_,i)=>`<line x1="238" y1="${cylTop+ (i+1)*cylH/10}" x2="243" y2="${cylTop+(i+1)*cylH/10}" stroke="#1B2A4A" stroke-width="1"/>`).join('')}
+      <text x="220" y="${cylTop-8}" text-anchor="middle" font-size="11" fill="#1B2A4A" font-weight="700">눈금실린더</text>
+    </g>
+    <!-- bubbles (수집 중일 때만) -->
+    ${(offset===0 && S.collecting && pct>0 && pct<1) ? `<circle cx="215" cy="${cylTop+gasHeight+10}" r="3" fill="#fff" opacity="0.8"><animate attributeName="cy" values="${cylBottom};${cylTop+gasHeight+5}" dur="1.1s" repeatCount="indefinite"/></circle>` : ''}
+    <text x="220" y="315" text-anchor="middle" font-size="11" fill="#1B2A4A" font-weight="700">수조</text>
+
+    ${showLevelLines ? `
+    <!-- 수조(밖) 수면 기준선 -->
+    <line x1="118" y1="${EXTERNAL_LEVEL_Y}" x2="336" y2="${EXTERNAL_LEVEL_Y}" stroke="#1B2A4A" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="121" y="${EXTERNAL_LEVEL_Y-5}" font-size="9.5" fill="#1B2A4A" font-weight="700">수조 수면</text>
+    <!-- 실린더(안) 수면선 -->
+    <line x1="184" y1="${internalY}" x2="258" y2="${internalY}" stroke="${lineColor}" stroke-width="2.5" stroke-dasharray="${matched?'0':'3 2'}"/>
+    <text x="184" y="${internalY-5}" font-size="9.5" fill="${lineColor}" font-weight="800">실린더 안 수면${matched?' ✓':''}</text>
+    ` : ''}
+  </svg>`;
+}
+
+function svgThermoBaro(T,P){
+  const tPct = Math.max(0,Math.min(1,(T-(-10))/50));
+  const thermoH = 100, thermoFill = thermoH*tPct;
+  const angle = -90 + ((P-0.9)/0.2)*180; // 0.9~1.1 atm mapped to -90..90 deg
+  return `
+  <svg viewBox="0 0 300 200" width="300">
+    <!-- thermometer -->
+    <g transform="translate(40,20)">
+      <rect x="0" y="0" width="16" height="120" rx="8" fill="#fff" stroke="#1B2A4A" stroke-width="2"/>
+      <rect x="4" y="${120-thermoFill}" width="8" height="${thermoFill}" fill="#E8792D"/>
+      <circle cx="8" cy="132" r="14" fill="#E8792D" stroke="#1B2A4A" stroke-width="2"/>
+      <text x="8" y="165" text-anchor="middle" font-size="12" font-weight="700" fill="#1B2A4A">온도계</text>
+    </g>
+    <!-- barometer -->
+    <g transform="translate(170,20)">
+      <circle cx="60" cy="60" r="58" fill="#fff" stroke="#1B2A4A" stroke-width="2"/>
+      <circle cx="60" cy="60" r="46" fill="none" stroke="#E4DFC9" stroke-width="2"/>
+      <line x1="60" y1="60" x2="${60+40*Math.cos(angle*Math.PI/180)}" y2="${60+40*Math.sin(angle*Math.PI/180)}" stroke="#E8792D" stroke-width="3"/>
+      <circle cx="60" cy="60" r="4" fill="#1B2A4A"/>
+      <text x="60" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#1B2A4A">기압계</text>
+    </g>
+  </svg>`;
+}
+
+/* ---------------- 이벤트 처리 ---------------- */
+function attachHandlers(){
+  const $ = id=>document.getElementById(id);
+
+  if($('startBtn')) $('startBtn').onclick = ()=>{ newScenario(); goStep(1); };
+  if($('backBtn')) $('backBtn').onclick = ()=> goStep(Math.max(0,S.step-1));
+  if($('nextBtn')) $('nextBtn').onclick = ()=> goStep(S.step+1);
+
+  if($('measureBefore')) $('measureBefore').onclick = ()=>{
+    S.step1Done = true;
+    renderStage();
+  };
+
+  if($('collectBtn')) $('collectBtn').onclick = ()=>{
+    if(!S.collecting){
+      S.collecting = true;
+      S.lowVolWarn = false;
+      S.volumeML = null;
+      S.leveled = false;
+      S.collectStart = Date.now();
+      S._timer = setInterval(()=>{
+        const t = (Date.now()-S.collectStart)/1000;
+        S.collectVal = Math.min(300, t*S.rate);
+        const ro = document.getElementById('volReadout');
+        if(ro) ro.textContent = Math.round(S.collectVal);
+        drawWaterScene();
+      }, 100);
+      renderStage();
+    } else {
+      clearInterval(S._timer);
+      S.collecting = false;
+      const v = Math.round(S.collectVal);
+      if(v < 60){
+        S.lowVolWarn = true;
+        S.collectVal = 0;
+        renderStage();
+      } else {
+        S.lowVolWarn = false;
+        S.volumeML = v;
+        S.recordedV = v;
+        S.levelOffset = 0;
+        S.leveled = false;
+        renderStage();
+        renderDataPanel();
+      }
+    }
+  };
+
+  if($('levelSlider')) $('levelSlider').oninput = (e)=>{
+    S.levelOffset = parseInt(e.target.value,10);
+    updateLevelUI();
+  };
+
+  if($('recordTP')) $('recordTP').onclick = ()=>{
+    S.recordedT = S.T;
+    S.recordedP = fmt(S.Patm);
+    renderStage();
+    renderDataPanel();
+  };
+
+  if($('measureAfter')) $('measureAfter').onclick = ()=>{
+    const vaporMmHg = VAPOR[S.T];
+    const pGas = S.Patm - vaporMmHg/760;
+    const Vl = S.volumeML/1000;
+    const Tk = S.T+273;
+    const nTrue = (pGas*Vl)/(R*Tk);
+    const massTrue = nTrue * S.gas.M;
+    const noise = 0.97 + Math.random()*0.06;
+    const massMeasured = +(massTrue*noise).toFixed(2);
+    S.massAfter = +(S.massBefore - massMeasured).toFixed(2);
+    S.massGas = +(S.massBefore - S.massAfter).toFixed(2);
+    renderStage();
+    renderDataPanel();
+  };
+
+  attachCalcHandlers();
+
+  if($('gasChoices')){
+    $('gasChoices').querySelectorAll('.gas-choice').forEach(el=>{
+      el.onclick = ()=>{
+        $('gasChoices').querySelectorAll('.gas-choice').forEach(e2=>e2.classList.remove('picked','correct','wrong'));
+        el.classList.add('picked');
+        S.picked = el.dataset.key;
+        showVerdict();
+      };
+    });
+  }
+  if($('restartBtn')) $('restartBtn').onclick = ()=>{ newScenario(); goStep(0); };
+}
+
+function drawWaterScene(){
+  const scene = document.querySelector('.scene');
+  if(scene && S.step===2) scene.innerHTML = svgWaterDisplacement(S.collectVal, 0);
+}
+
+function updateLevelUI(){
+  const scene = document.querySelector('.scene');
+  if(scene) scene.innerHTML = svgWaterDisplacement(S.volumeML, S.levelOffset);
+
+  const diff = computeLevelDiff();
+  const matched = Math.abs(diff) <= LEVEL_TOL;
+  if(matched) S.leveled = true;
+
+  const statusEl = document.getElementById('levelStatus');
+  if(statusEl){
+    if(matched){
+      statusEl.style.background = 'var(--success-soft)';
+      statusEl.style.color = '#1f5233';
+      statusEl.innerHTML = '✅ 안과 밖의 수면 높이가 같아졌습니다! 이제 실린더 속 기체의 압력이 대기압과 같아져 부피를 그대로 읽을 수 있습니다.';
+    } else {
+      statusEl.style.background = '';
+      statusEl.style.color = '';
+      statusEl.innerHTML = diff>0
+        ? '⚠️ 실린더 안의 수면이 수조보다 낮습니다. 슬라이더를 <b>올리기</b> 쪽으로 이동해 두 수면을 맞춰 보세요.'
+        : '⚠️ 실린더 안의 수면이 수조보다 높습니다. 슬라이더를 <b>내리기</b> 쪽으로 이동해 두 수면을 맞춰 보세요.';
+    }
+  }
+
+  const volReadout = document.getElementById('volReadout');
+  if(volReadout){
+    volReadout.textContent = S.leveled ? S.volumeML : '?';
+    const box = volReadout.closest('.readout');
+    if(box){ if(S.leveled) box.classList.remove('dim'); else box.classList.add('dim'); }
+  }
+
+  const nextBtn = document.getElementById('nextBtn');
+  if(nextBtn) nextBtn.disabled = !(S.volumeML!=null && S.leveled);
+}
+
+function attachCalcHandlers(){
+  const $ = id=>document.getElementById(id);
+  if(!$('check-vapor')) return;
+
+  const vaporCorrect = VAPOR[S.T];
+  $('check-vapor').onclick = ()=>{
+    const v = parseFloat($('in-vapor').value);
+    const fb = $('fb-vapor');
+    if(Math.abs(v-vaporCorrect) < 0.15){
+      fb.textContent = `정답! ${S.T}℃에서의 포화 수증기압은 ${vaporCorrect} mmHg입니다.`;
+      fb.className='fb ok'; S.calc.vapor = true;
+      const echo = $('vaporEcho'); if(echo) echo.textContent = vaporCorrect;
+    } else {
+      fb.textContent = `다시 확인해 보세요. 참고표에서 ${S.T}℃ 값을 찾아보세요.`;
+      fb.className='fb bad';
+    }
+  };
+
+  const pGasCorrect = +(S.Patm - vaporCorrect/760).toFixed(3);
+  $('check-pcorr').onclick = ()=>{
+    const v = parseFloat($('in-pcorr').value);
+    const fb = $('fb-pcorr');
+    if(Math.abs(v-pGasCorrect) < 0.005){
+      fb.textContent = `정답! 보정된 기체의 압력은 약 ${pGasCorrect} 기압입니다.`;
+      fb.className='fb ok'; S.calc.pcorr = true;
+    } else {
+      fb.textContent = `힌트: ${fmt(S.Patm)} − (${vaporCorrect} ÷ 760) 을 계산해 보세요.`;
+      fb.className='fb bad';
+    }
+  };
+
+  const Vl = S.volumeML/1000, Tk = S.T+273;
+  const nCorrect = (pGasCorrect*Vl)/(R*Tk);
+  $('check-mol').onclick = ()=>{
+    const v = parseFloat($('in-mol').value);
+    const fb = $('fb-mol');
+    if(Math.abs(v-nCorrect)/nCorrect < 0.08){
+      fb.textContent = `정답! n ≈ ${nCorrect.toFixed(4)} mol`;
+      fb.className='fb ok'; S.calc.mol = true;
+    } else {
+      fb.textContent = `힌트: n = PV / RT = (${pGasCorrect} × ${fmt(Vl,3)}) / (0.082 × ${Tk})`;
+      fb.className='fb bad';
+    }
+  };
+
+  const molarCorrect = S.massGas/nCorrect;
+  $('check-molar').onclick = ()=>{
+    const v = parseFloat($('in-molar').value);
+    const fb = $('fb-molar');
+    if(Math.abs(v-molarCorrect)/molarCorrect < 0.1){
+      fb.textContent = `정답! 분자량 ≈ ${molarCorrect.toFixed(1)} g/mol`;
+      fb.className='fb ok'; S.calc.molar = true;
+      const nextBtn = document.getElementById('nextBtn');
+      if(nextBtn) nextBtn.disabled = false;
+    } else {
+      fb.textContent = `힌트: M = 질량 ÷ n = ${fmt(S.massGas)} ÷ ${nCorrect.toFixed(4)}`;
+      fb.className='fb bad';
+    }
+  };
+}
+
+function showVerdict(){
+  const correct = S.picked === S.gas.key;
+  const v = document.getElementById('verdict');
+  document.querySelectorAll('.gas-choice').forEach(el=>{
+    if(el.dataset.key===S.gas.key) el.classList.add('correct');
+    else if(el.dataset.key===S.picked && !correct) el.classList.add('wrong');
+  });
+  v.className = 'verdict show ' + (correct?'ok':'bad');
+  v.innerHTML = correct
+    ? `<h4>🎉 정답입니다!</h4><p>통 안에 들어 있던 기체는 실제로 <b>${S.gas.name}(${S.gas.formula}, 분자량 ${S.gas.M})</b>였습니다. 계산한 분자량 ${fmt(S.mCalcTrue,1)} g/mol이 실제 값과 거의 일치합니다. 오차가 발생한 원인(수증기압 보정, 측정 오차 등)을 친구들과 이야기해 보세요.</p>`
+    : `<h4>다시 생각해 볼까요?</h4><p>계산한 분자량 ${fmt(S.mCalcTrue,1)} g/mol은 실제로 <b>${S.gas.name}(${S.gas.formula}, 분자량 ${S.gas.M})</b>에 가장 가깝습니다. 압력 보정이나 부피·질량 측정 과정에서 오차가 없었는지 이전 단계로 돌아가 확인해 보세요.</p>`;
+}
+
+/* ---------------- 초기화 ---------------- */
+newScenario();
+goStep(0);
+</script>
+</body>
+</html>
